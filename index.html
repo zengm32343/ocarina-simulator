@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ocarina Simulator</title>
+    <meta
+      name="description"
+      content="Playable 3D ocarina in the browser: six ocarina styles, the twelve Ocarina of Time songs, practice mode and a microphone blow mode."
+    />
+    <link rel="canonical" href="https://ootguide.com/ocarina/" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="intro">
+        <h1>Ocarina Simulator</h1>
+        <p>
+          Play the five ocarina notes with the arrow keys and Space, or tap the keys below the ocarina. Play a song
+          correctly and the simulator recognises it.
+        </p>
+        <p class="links">
+          <a href="https://ootguide.com/ocarina/">Play it on ootguide.com</a>
+          <span aria-hidden="true">·</span>
+          <a href="https://github.com/zengm32343/ocarina-simulator">Source on GitHub</a>
+        </p>
+      </header>
+
+      <div class="player" data-ocarina>
+        <div class="card">
+          <div data-stage class="stage"></div>
+          <p class="drag-hint">Drag to turn the ocarina</p>
+          <p data-loading class="loading hidden">Loading model…</p>
+          <div data-toast role="status" aria-live="polite" class="toast hidden"></div>
+        </div>
+
+        <div data-styles class="styles" role="radiogroup" aria-label="Ocarina style"></div>
+        <div data-style-info class="style-info"></div>
+
+        <div role="group" aria-label="Ocarina notes" data-keys class="keyboard">
+          <button type="button" data-shift="sharp" aria-pressed="false" class="key kb-shift">
+            <span class="label">⇧ Shift</span><span class="sub">♯ Half step up</span>
+          </button>
+          <button type="button" data-shift="flat" aria-pressed="false" class="key kb-z">
+            <span class="label">Z</span><span class="sub">♭ Half step down</span>
+          </button>
+          <button type="button" data-note="A" class="key kb-A"><span class="label">Space</span><span class="sub" data-pitch="A">D</span></button>
+          <button type="button" data-note="D" class="key kb-D"><span class="label">↓</span><span class="sub" data-pitch="D">F</span></button>
+          <button type="button" data-note="R" class="key kb-R"><span class="label">→</span><span class="sub" data-pitch="R">A</span></button>
+          <button type="button" data-note="L" class="key kb-L"><span class="label">←</span><span class="sub" data-pitch="L">B</span></button>
+          <button type="button" data-note="U" class="key kb-U"><span class="label">↑</span><span class="sub" data-pitch="U">D</span></button>
+        </div>
+
+        <div class="row">
+          <button type="button" data-breath aria-pressed="false" class="breath">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="9" y="3" width="6" height="11" rx="3"></rect>
+              <path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path>
+            </svg>
+            Blow mode
+          </button>
+          <div data-breath-meter class="meter hidden"><div data-breath-level class="level"></div></div>
+        </div>
+        <p data-breath-hint class="small hidden">
+          Hold a note and blow at your microphone. Blow harder for a louder, slightly higher note, like a real ocarina.
+          The sound from your microphone stays in your browser and is never recorded or sent.
+        </p>
+        <p data-breath-error role="alert" class="small error hidden"></p>
+
+        <div class="row">
+          <label>
+            <strong>Song to practise</strong>
+            <select data-practice><option value="">Free play</option></select>
+          </label>
+          <button type="button" data-clear class="plain">Clear</button>
+        </div>
+
+        <div data-target-row class="hidden">
+          <p class="caption">Play these notes</p>
+          <div data-target class="notes"></div>
+        </div>
+        <div>
+          <p class="caption">Your notes</p>
+          <div data-strip class="notes"></div>
+        </div>
+
+        <p class="small hint">Keyboard: arrow keys and Space, like the C buttons and A; hold Shift for a half step up or Z for down.</p>
+      </div>
+
+      <footer class="footer">
+        <p>
+          Made for <a href="https://ootguide.com/">OoT Guide</a>, an unofficial Ocarina of Time Remake guide, where the
+          simulator also comes with song guides in seven languages.
+        </p>
+        <p>
+          Fan-made. No game audio or artwork is used. Not affiliated with Nintendo; <i>The Legend of Zelda</i> and
+          <i>Ocarina of Time</i> are trademarks of Nintendo.
+        </p>
+      </footer>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

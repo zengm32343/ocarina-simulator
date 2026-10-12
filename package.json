@@ -1,0 +1,28 @@
+{
+  "name": "ocarina-simulator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Playable 3D ocarina in the browser: Web Audio synth and samples, three.js models, song recognition and a microphone blow mode. Live at ootguide.com/ocarina/.",
+  "homepage": "https://ootguide.com/ocarina/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zengm32343/ocarina-simulator.git"
+  },
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "typescript": "^5.7.2",
+    "vite": "^7.1.0",
+    "vitest": "^4.1.11"
+  }
+}
