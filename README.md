@@ -2,7 +2,9 @@
 
 A playable 3D ocarina in the browser. Play the twelve *Ocarina of Time* songs with your keyboard or by touch, switch between six real-world ocarina styles, and blow into your microphone to control the sound.
 
-**▶ Play it live: [ootguide.com/ocarina/](https://ootguide.com/ocarina/)** (in 7 languages, with song guides)
+**▶ Play it live: [ootguide.com/ocarina/](https://ootguide.com/ocarina/)** (in 9 languages, with song guides)
+
+[![Playing Zelda's Lullaby, then switching between the terracotta, xun, bird and turtle ocarinas](docs/demo.gif)](https://ootguide.com/ocarina/)
 
 Built for [OoT Guide](https://ootguide.com/), an unofficial guide to *Ocarina of Time* Remake for Nintendo Switch 2.
 
@@ -14,6 +16,8 @@ Built for [OoT Guide](https://ootguide.com/), an unofficial guide to *Ocarina of
 - **Blow mode**: optional microphone input. Blow harder for a louder, slightly sharper note, like a real ocarina. Audio is analysed in the browser and never recorded or sent.
 - **Fingering on the model**: the 3D ocarina lights the open holes and shows covered ones for each note.
 - No framework, no game assets: TypeScript, three.js and the Web Audio API.
+
+![The six ocarinas: Italian 10-hole, terracotta, Chilean black clay, Chinese xun, bird and pre-Columbian turtle](docs/styles.png)
 
 ## Run it locally
 
