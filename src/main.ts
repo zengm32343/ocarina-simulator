@@ -363,6 +363,13 @@ function setup(root: HTMLElement) {
     history = [];
     render();
   });
+  // ?song=<id> opens straight into practice mode for that song.
+  const linkedSong = new URLSearchParams(location.search).get('song');
+  if (linkedSong && linkedSong in SONGS) {
+    select.value = linkedSong;
+    practice = linkedSong;
+    render();
+  }
   $('[data-clear]').addEventListener('click', () => {
     history = [];
     progress = 0;

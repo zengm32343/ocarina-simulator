@@ -19,6 +19,18 @@ Built for [OoT Guide](https://ootguide.com/), an unofficial guide to *Ocarina of
 
 ![The six ocarinas: Italian 10-hole, terracotta, Chilean black clay, Chinese xun, bird and pre-Columbian turtle](docs/styles.png)
 
+## Screenshots
+
+| Practice mode | On a phone |
+| --- | --- |
+| [![Practice mode for the Song of Storms: the next note is highlighted and the played notes are shown below](docs/practice.png)](https://ootguide.com/ocarina/?song=song-of-storms) | [![The simulator on a phone, with touch keys under the 3D ocarina](docs/mobile.png)](https://ootguide.com/ocarina/) |
+
+Practice mode lights the next note on the model and the keys. Link to `?song=<id>` (for example [`?song=song-of-storms`](https://ootguide.com/ocarina/?song=song-of-storms)) to open the simulator straight into practice for that song.
+
+The simulator is part of [OoT Guide](https://ootguide.com/), where every song also has its notes for N64, 3DS and Switch 2, where to learn it and what it does: see [all Ocarina of Time songs](https://ootguide.com/songs/ocarina-songs/).
+
+[![The OoT Guide song list with the notes, where to learn each song and what it does](docs/song-guide.png)](https://ootguide.com/songs/ocarina-songs/)
+
 ## Run it locally
 
 Requires Node 20.19+ and pnpm (npm works too).
