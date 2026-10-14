@@ -1,24 +1,28 @@
+import { BreathDetector, peakiness, TONAL_THRESHOLD_DB } from './breath-detector';
+
 /**
- * Breath input: how hard the player is blowing at the microphone, 0–1.
- * Blowing on a microphone makes loud low-frequency wind noise, so the level
- * comes from the signal below ~250 Hz, above a noise floor that follows the
- * room while the player is not blowing. The ocarina's own notes (277 Hz and up) are filtered out, and
- * echo cancellation keeps the speakers from feeding back. Audio is analysed
+ * Breath input: how hard the player is blowing at the microphone, 0–1 (0 when not blowing).
+ * The level comes from the signal below ~250 Hz; {@link BreathDetector} decides what counts
+ * as a breath. Echo cancellation keeps the speakers from feeding back. Audio is analysed
  * in the browser and never recorded or sent anywhere.
  */
 export class BreathInput {
   private frame = 0;
   private ticks = 0;
-  private level = 0;
-  private floor = Infinity;
-  private heard = 0;
+  private readonly detector = new BreathDetector();
+  private readonly wave: Float32Array<ArrayBuffer>;
+  private readonly spectrum: Float32Array<ArrayBuffer>;
 
   private constructor(
     private readonly ctx: AudioContext,
     private readonly stream: MediaStream,
-    private readonly analyser: AnalyserNode,
+    private readonly low: AnalyserNode,
+    private readonly full: AnalyserNode,
     private readonly onLevel: (level: number) => void,
-  ) {}
+  ) {
+    this.wave = new Float32Array(low.fftSize);
+    this.spectrum = new Float32Array(full.frequencyBinCount);
+  }
 
   /**
    * Ask for the microphone and start reporting levels every frame; rejects if access is denied.
@@ -46,44 +50,41 @@ export class BreathInput {
       setAudioSession('playback');
       throw error;
     }
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 2048;
-    let node: AudioNode = ctx.createMediaStreamSource(stream);
+    const source = ctx.createMediaStreamSource(stream);
+    // Fine frequency resolution separates the harmonics of low voices.
+    const full = ctx.createAnalyser();
+    full.fftSize = 4096;
+    full.smoothingTimeConstant = 0.5;
+    source.connect(full);
+    const low = ctx.createAnalyser();
+    low.fftSize = 2048;
+    let node: AudioNode = source;
     for (let i = 0; i < 2; i++) {
       const lowpass = ctx.createBiquadFilter();
       lowpass.type = 'lowpass';
       lowpass.frequency.value = 250;
       node = node.connect(lowpass);
     }
-    node.connect(analyser);
+    node.connect(low);
     // iOS can refuse to start audio while it switches to recording; the analyser retries each frame.
     if (ctx.state === 'suspended') await ctx.resume().catch(() => undefined);
-    const input = new BreathInput(ctx, stream, analyser, onLevel);
+    const input = new BreathInput(ctx, stream, low, full, onLevel);
     input.tick();
     return input;
   }
 
-  private tick = () => {
+  private tick = (now = performance.now()) => {
     if (this.ctx.state !== 'running' && this.ticks++ % 30 === 0) void this.ctx.resume().catch(() => undefined);
-    const data = new Float32Array(this.analyser.fftSize);
-    this.analyser.getFloatTimeDomainData(data);
+    this.low.getFloatTimeDomainData(this.wave);
+    // Only the newest ~20 ms, so a tap on the screen stays as short as it really is.
     let sum = 0;
-    for (const x of data) sum += x * x;
-    const db = 10 * Math.log10(sum / data.length + 1e-12);
-    // Digital silence (a muted or starting microphone) says nothing about the room.
-    if (db > -100) {
-      this.heard++;
-      if (!Number.isFinite(this.floor)) this.floor = db;
-      // The first half second calibrates to the room.
-      else if (this.heard < 30) this.floor += (db - this.floor) * 0.2;
-      else if (db < this.floor) this.floor = db;
-      // Follow the room while the player is not blowing; creep up slowly while they are.
-      else if (db < this.floor + 8) this.floor += (db - this.floor) * 0.02;
-      else this.floor += 0.03;
-    }
-    const target = Number.isFinite(this.floor) ? Math.min(1, Math.max(0, (db - this.floor - 8) / 28)) : 0;
-    this.level += (target - this.level) * (target > this.level ? 0.5 : 0.15);
-    this.onLevel(this.level);
+    const recent = this.wave.subarray(this.wave.length / 2);
+    for (const x of recent) sum += x * x;
+    const lowDb = 10 * Math.log10(sum / recent.length + 1e-12);
+    this.full.getFloatFrequencyData(this.spectrum);
+    const binHz = this.ctx.sampleRate / this.full.fftSize;
+    const tonal = peakiness(this.spectrum, binHz) > TONAL_THRESHOLD_DB;
+    this.onLevel(this.detector.update(lowDb, tonal, now).level);
     this.frame = requestAnimationFrame(this.tick);
   };
 

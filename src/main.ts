@@ -303,7 +303,7 @@ function setup(root: HTMLElement) {
   const onBreath = (level: number) => {
     breathLevel.style.width = `${Math.round(level * 100)}%`;
     synth.setBreath(level);
-    const on = blowing ? level > 0.04 : level > 0.1;
+    const on = level > 0;
     if (on === blowing) return;
     blowing = on;
     sound(fingered);
