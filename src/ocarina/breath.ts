@@ -8,6 +8,7 @@
  */
 export class BreathInput {
   private frame = 0;
+  private ticks = 0;
   private level = 0;
   private floor = Infinity;
   private heard = 0;
@@ -25,8 +26,9 @@ export class BreathInput {
    */
   static async start(onLevel: (level: number) => void): Promise<BreathInput> {
     if (!navigator.mediaDevices?.getUserMedia) throw new DOMException('No microphone API', 'NotSupportedError');
+    // iOS refuses to record (InvalidStateError) while the page's audio session is 'playback'.
+    setAudioSession('play-and-record');
     const ctx = new AudioContext();
-    const resumed = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices
@@ -39,9 +41,9 @@ export class BreathInput {
           }
           throw error;
         });
-      await resumed;
     } catch (error) {
       void ctx.close();
+      setAudioSession('playback');
       throw error;
     }
     const analyser = ctx.createAnalyser();
@@ -54,13 +56,15 @@ export class BreathInput {
       node = node.connect(lowpass);
     }
     node.connect(analyser);
-    if (ctx.state === 'suspended') await ctx.resume();
+    // iOS can refuse to start audio while it switches to recording; the analyser retries each frame.
+    if (ctx.state === 'suspended') await ctx.resume().catch(() => undefined);
     const input = new BreathInput(ctx, stream, analyser, onLevel);
     input.tick();
     return input;
   }
 
   private tick = () => {
+    if (this.ctx.state !== 'running' && this.ticks++ % 30 === 0) void this.ctx.resume().catch(() => undefined);
     const data = new Float32Array(this.analyser.fftSize);
     this.analyser.getFloatTimeDomainData(data);
     let sum = 0;
@@ -87,5 +91,12 @@ export class BreathInput {
     cancelAnimationFrame(this.frame);
     for (const track of this.stream.getTracks()) track.stop();
     void this.ctx.close();
+    setAudioSession('playback');
   }
+}
+
+/** iOS 16.4+ audio session; 'playback' ignores the silent switch but cannot record. */
+function setAudioSession(type: 'playback' | 'play-and-record'): void {
+  const session = (navigator as { audioSession?: { type: string } }).audioSession;
+  if (session) session.type = type;
 }
