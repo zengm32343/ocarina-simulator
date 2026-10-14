@@ -19,12 +19,31 @@ export class BreathInput {
     private readonly onLevel: (level: number) => void,
   ) {}
 
-  /** Ask for the microphone and start reporting levels every frame; rejects if access is denied. */
+  /**
+   * Ask for the microphone and start reporting levels every frame; rejects if access is denied.
+   * Call synchronously from a click: iOS only grants the microphone and starts audio inside the gesture.
+   */
   static async start(onLevel: (level: number) => void): Promise<BreathInput> {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false },
-    });
+    if (!navigator.mediaDevices?.getUserMedia) throw new DOMException('No microphone API', 'NotSupportedError');
     const ctx = new AudioContext();
+    const resumed = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices
+        .getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } })
+        .catch((error: unknown) => {
+          // Some embedded browsers reject the processing constraints; plain audio still works there.
+          const name = (error as DOMException)?.name;
+          if (name === 'OverconstrainedError' || name === 'TypeError') {
+            return navigator.mediaDevices.getUserMedia({ audio: true });
+          }
+          throw error;
+        });
+      await resumed;
+    } catch (error) {
+      void ctx.close();
+      throw error;
+    }
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 2048;
     let node: AudioNode = ctx.createMediaStreamSource(stream);

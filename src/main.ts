@@ -1,5 +1,5 @@
 import './style.css';
-import type { BreathInput } from './ocarina/breath';
+import { BreathInput } from './ocarina/breath';
 import { advancePractice, matchSong } from './ocarina/matcher';
 import type { Note } from './ocarina/notes';
 import type { OcarinaScene } from './ocarina/scene';
@@ -49,6 +49,9 @@ const STRINGS = {
     'Microphone access was blocked. Allow it for this page (the icon in the address bar) and reload. On a Mac, also check System Settings › Privacy & Security › Microphone.',
   breathNoMic: 'No microphone was found. Plug one in or check your sound settings.',
   breathBusy: 'The microphone is being used by another app. Close it and try again.',
+  breathDeniedMobile:
+    'Microphone access was blocked. On a phone, open Settings, find your browser app and turn on Microphone, then reload the page. In Safari, also check aA › Website Settings › Microphone.',
+  breathUnsupported: "This browser can't use the microphone. Open the page in Safari or Chrome to use blow mode.",
 };
 
 const STYLE_KEY = 'ocarina-style';
@@ -322,18 +325,24 @@ function setup(root: HTMLElement) {
     synth.unlock();
     breathError.classList.add('hidden');
     try {
-      const { BreathInput } = await import('./ocarina/breath');
       breath = await BreathInput.start(onBreath);
       showBreath(true);
       sound(held.at(-1));
     } catch (error) {
-      const reason = (error as DOMException)?.name;
-      breathError.textContent =
-        reason === 'NotFoundError' || reason === 'OverconstrainedError'
-          ? STRINGS.breathNoMic
-          : reason === 'NotReadableError' || reason === 'AbortError'
-            ? STRINGS.breathBusy
-            : STRINGS.breathDenied;
+      const reason = (error as DOMException)?.name || 'Error';
+      // In-app browsers (WeChat, Instagram, ...) often cannot reach the microphone at all.
+      const inApp = /MicroMessenger|QQ\/|Weibo|FBAN|FBAV|Instagram|Line\//i.test(navigator.userAgent);
+      const message =
+        reason === 'NotSupportedError' || (inApp && reason === 'NotAllowedError')
+          ? STRINGS.breathUnsupported
+          : reason === 'NotFoundError' || reason === 'OverconstrainedError'
+            ? STRINGS.breathNoMic
+            : reason === 'NotReadableError' || reason === 'AbortError'
+              ? STRINGS.breathBusy
+              : matchMedia('(pointer: coarse)').matches
+                ? STRINGS.breathDeniedMobile
+                : STRINGS.breathDenied;
+      breathError.textContent = `${message} (${reason})`;
       breathError.classList.remove('hidden');
     } finally {
       starting = false;
