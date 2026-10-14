@@ -13,7 +13,7 @@ Built for [OoT Guide](https://ootguide.com/), an unofficial guide to *Ocarina of
 - **Six ocarinas, six sounds**: a procedural Italian 10-hole ocarina plus five CC BY 3D scans (terracotta, Chilean black clay, Chinese xun, bird, pre-Columbian turtle). Each has its own voice: looped recordings re-pitched from the nearest sample, or a Web Audio synth tuned to the instrument.
 - **Song recognition**: play any of the twelve songs and the simulator names it. Practice mode walks you through a song note by note.
 - **Keyboard and touch**: arrow keys and Space for the five notes (like the N64 C buttons and A), Shift and Z for a half step up or down. On touch screens, slide a finger across the keys.
-- **Blow mode**: optional microphone input. Blow harder for a louder, slightly sharper note, like a real ocarina. Taps on the screen, talking and music don't count as breaths. Audio is analysed in the browser and never recorded or sent.
+- **Blow mode**: optional microphone input. Blow harder for a louder, slightly sharper note, like a real ocarina. Taps on the screen don't count as breaths, and talking needs to be much louder than a breath to sound. Audio is analysed in the browser and never recorded or sent.
 - **Fingering on the model**: the 3D ocarina lights the open holes and shows covered ones for each note.
 - No framework, no game assets: TypeScript, three.js and the Web Audio API.
 
@@ -50,7 +50,7 @@ pnpm test
 | `src/ocarina/scene.ts` | `createOcarinaScene`: three.js scene, procedural ocarina, GLB loading, hole highlights and note particles |
 | `src/ocarina/styles.ts` | The six ocarina styles: models, hole positions, fingerings, sounds and credits |
 | `src/ocarina/breath.ts` | `BreathInput`: microphone input, iOS audio session, low-band level and spectrum every frame |
-| `src/ocarina/breath-detector.ts` | `BreathDetector`: decides what counts as a breath (sustained low-frequency noise above the room; taps, voices and music are ignored) |
+| `src/ocarina/breath-detector.ts` | `BreathDetector`: decides what counts as a breath (sustained low-frequency noise above the room; taps are ignored, voices and music need to be much louder) |
 | `src/ocarina/matcher.ts` | Song recognition and practice-mode progress |
 | `src/songs.ts` | The twelve songs as note sequences |
 | `src/main.ts` | The page: keyboard, touch, practice mode, style picker |

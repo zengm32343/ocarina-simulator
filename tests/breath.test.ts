@@ -88,16 +88,16 @@ const clip = (s: Float64Array, limit: number) => s.map((x) => Math.max(-limit, M
 
 describe('peakiness', () => {
   it('stays low for breath-like noise, even when the microphone clips', () => {
-    expect(peakiness(analyse(noise(1, false)), BIN)).toBeLessThan(TONAL_THRESHOLD_DB);
-    expect(peakiness(analyse(noise(2, true)), BIN)).toBeLessThan(TONAL_THRESHOLD_DB);
-    expect(peakiness(analyse(clip(noise(3, true, 3), 0.5)), BIN)).toBeLessThan(TONAL_THRESHOLD_DB);
+    expect(peakiness(analyse(noise(1, false)), BIN).db).toBeLessThan(TONAL_THRESHOLD_DB);
+    expect(peakiness(analyse(noise(2, true)), BIN).db).toBeLessThan(TONAL_THRESHOLD_DB);
+    expect(peakiness(analyse(clip(noise(3, true, 3), 0.5)), BIN).db).toBeLessThan(TONAL_THRESHOLD_DB);
   });
 
   it('is high for voices, whistles and the ocarina itself', () => {
-    expect(peakiness(analyse(harmonic(120, 12)), BIN)).toBeGreaterThan(TONAL_THRESHOLD_DB);
-    expect(peakiness(analyse(harmonic(220, 8)), BIN)).toBeGreaterThan(TONAL_THRESHOLD_DB);
-    expect(peakiness(analyse(harmonic(587, 3)), BIN)).toBeGreaterThan(TONAL_THRESHOLD_DB);
-    expect(peakiness(analyse(harmonic(1500, 1)), BIN)).toBeGreaterThan(TONAL_THRESHOLD_DB);
+    expect(peakiness(analyse(harmonic(120, 12)), BIN).db).toBeGreaterThan(TONAL_THRESHOLD_DB);
+    expect(peakiness(analyse(harmonic(220, 8)), BIN).db).toBeGreaterThan(TONAL_THRESHOLD_DB);
+    expect(peakiness(analyse(harmonic(587, 3)), BIN).db).toBeGreaterThan(TONAL_THRESHOLD_DB);
+    expect(peakiness(analyse(harmonic(1500, 1)), BIN).db).toBeGreaterThan(TONAL_THRESHOLD_DB);
   });
 });
 
@@ -172,6 +172,11 @@ describe('BreathDetector', () => {
   it('ignores talking and music near the microphone', () => {
     const d = calibrated();
     expect(feed(d, 1000, 2000, () => ROOM + 25, true)).toBe(false);
+  });
+
+  it('still starts on a strong breath when the phone reports a tonal spectrum', () => {
+    const d = calibrated();
+    expect(feed(d, 1000, 1500, () => ROOM + 40, true)).toBe(true);
   });
 
   it('ignores small changes in the room', () => {

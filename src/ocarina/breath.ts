@@ -2,14 +2,18 @@ import { BreathDetector, peakiness, TONAL_THRESHOLD_DB } from './breath-detector
 
 /**
  * Breath input: how hard the player is blowing at the microphone, 0–1 (0 when not blowing).
- * The level comes from the signal below ~250 Hz; {@link BreathDetector} decides what counts
- * as a breath. Echo cancellation keeps the speakers from feeding back. Audio is analysed
- * in the browser and never recorded or sent anywhere.
+ * The level comes from the signal below ~170 Hz; {@link BreathDetector} decides what counts
+ * as a breath. Echo cancellation stays off: on phones it switches on call-style voice
+ * processing that boosts speech and suppresses wind noise, which is exactly the breath.
+ * The ocarina's own notes (293 Hz and up) are filtered out instead. Audio is analysed in
+ * the browser and never recorded or sent anywhere.
  */
 export class BreathInput {
   private frame = 0;
   private ticks = 0;
   private readonly detector = new BreathDetector();
+  /** Latest analysis, read by the `?breathdebug` readout. */
+  readonly stats = { lowDb: -Infinity, peakiness: 0, peakHz: 0, maxAbove: -Infinity, maxPeakiness: 0, blowing: false };
   private readonly wave: Float32Array<ArrayBuffer>;
   private readonly spectrum: Float32Array<ArrayBuffer>;
 
@@ -36,7 +40,7 @@ export class BreathInput {
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices
-        .getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } })
+        .getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
         .catch((error: unknown) => {
           // Some embedded browsers reject the processing constraints; plain audio still works there.
           const name = (error as DOMException)?.name;
@@ -59,10 +63,11 @@ export class BreathInput {
     const low = ctx.createAnalyser();
     low.fftSize = 2048;
     let node: AudioNode = source;
-    for (let i = 0; i < 2; i++) {
+    // Eight stages: about 80 dB down at the ocarina's lowest note, so the speaker can't keep a breath going.
+    for (let i = 0; i < 8; i++) {
       const lowpass = ctx.createBiquadFilter();
       lowpass.type = 'lowpass';
-      lowpass.frequency.value = 250;
+      lowpass.frequency.value = 170;
       node = node.connect(lowpass);
     }
     node.connect(low);
@@ -83,10 +88,28 @@ export class BreathInput {
     const lowDb = 10 * Math.log10(sum / recent.length + 1e-12);
     this.full.getFloatFrequencyData(this.spectrum);
     const binHz = this.ctx.sampleRate / this.full.fftSize;
-    const tonal = peakiness(this.spectrum, binHz) > TONAL_THRESHOLD_DB;
-    this.onLevel(this.detector.update(lowDb, tonal, now).level);
+    const peak = peakiness(this.spectrum, binHz);
+    const frame = this.detector.update(lowDb, peak.db > TONAL_THRESHOLD_DB, now);
+    const { floor } = this.detector.levels;
+    Object.assign(this.stats, {
+      lowDb,
+      peakiness: peak.db,
+      peakHz: peak.hz,
+      maxAbove: Math.max(this.stats.maxAbove, lowDb - floor),
+      maxPeakiness: Math.max(this.stats.maxPeakiness, peak.db || 0),
+      blowing: frame.blowing,
+    });
+    this.onLevel(frame.level);
     this.frame = requestAnimationFrame(this.tick);
   };
+
+  /** Audio state and the microphone's processing settings, for the debug readout. */
+  get info(): string {
+    const s = this.stream.getAudioTracks()[0]?.getSettings() ?? {};
+    const { floor, smooth } = this.detector.levels;
+    const { tonal, fading } = this.detector.blocked;
+    return `blocked: tonal ${tonal} fading ${fading}\nctx ${this.ctx.state} ${this.ctx.sampleRate} Hz · echo ${s.echoCancellation} noise ${s.noiseSuppression} agc ${s.autoGainControl}\nfloor ${floor.toFixed(0)} smooth ${smooth.toFixed(0)}`;
+  }
 
   stop(): void {
     cancelAnimationFrame(this.frame);
